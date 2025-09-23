@@ -253,7 +253,11 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.addEventListener('dragover', function(e){
             e.preventDefault();
             if(dragInfo) {
-                if(!dragInfo.startCell) dragInfo.startCell = cell;
+                if(!dragInfo.startCell) {
+                    // 设置起始单元格为当前鼠标所在的单元格
+                    dragInfo.startCell = cell;
+                }
+                // 高亮显示从起始单元格到当前单元格的范围
                 highlightCells(dragInfo.startCell, cell);
             }
         });
@@ -379,10 +383,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const startCol = parseInt(startCell.dataset.col);
         const endCol = parseInt(endCell.dataset.col);
         const row = parseInt(startCell.dataset.row);
-        const minCol = Math.min(startCol,endCol);
-        const maxCol = Math.max(startCol,endCol);
+        
+        // 确保起始单元格和结束单元格在同一行
+        if(parseInt(endCell.dataset.row) !== row) return;
+        
+        const minCol = Math.min(startCol, endCol);
+        const maxCol = Math.max(startCol, endCol);
 
-        for(let c=minCol;c<=maxCol;c++){
+        for(let c = minCol; c <= maxCol; c++){
             const sel = document.querySelector(`.cell[data-row='${row}'][data-col='${c}']`);
             if(sel) {
                 sel.classList.add('highlight');
@@ -399,6 +407,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
-
 
 
