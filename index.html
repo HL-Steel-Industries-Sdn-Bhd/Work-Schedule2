@@ -78,11 +78,11 @@
         
         .schedule {
             display: grid;
-            grid-template-columns: 100px repeat(5, minmax(120px, 1fr));
+            grid-template-columns: 120px repeat(10, minmax(80px, 1fr));
             grid-auto-rows: minmax(50px, auto);
             gap: 2px;
             flex-grow: 1;
-            min-width: 800px;
+            min-width: 1000px;
         }
         
         .header {
@@ -97,7 +97,7 @@
             padding: 10px;
         }
         
-        .time-slot {
+        .time-header {
             background: #2c3e50;
             color: white;
             text-align: center;
@@ -148,11 +148,11 @@
             font-size: 14px;
             user-select: none;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
         }
         
-        .assigned-project.dragging {
-            opacity: 0.8;
-            transform: scale(1.05);
+        .assigned-project:hover {
+            background: #c0392b;
         }
         
         .instructions {
@@ -187,8 +187,8 @@
             }
             
             .schedule {
-                grid-template-columns: 80px repeat(5, minmax(100px, 1fr));
-                min-width: 700px;
+                grid-template-columns: 100px repeat(10, minmax(70px, 1fr));
+                min-width: 900px;
             }
             
             .project, .assigned-project {
@@ -210,7 +210,7 @@
             </div>
             
             <div class="schedule" id="schedule">
-                <!-- 表头和时间列将通过JavaScript生成 -->
+                <!-- 表头将通过JavaScript生成 -->
             </div>
         </div>
         
@@ -237,11 +237,19 @@
                 hours.push(`${hourStr}:30`);
             }
             
-            // 创建空表头
+            // 创建左上角空表头
             const emptyHeader = document.createElement('div');
             emptyHeader.className = 'header';
-            emptyHeader.innerText = '时间/员工';
+            emptyHeader.innerText = '员工/时间';
             schedule.appendChild(emptyHeader);
+            
+            // 创建时间表头（顶部）
+            hours.forEach(h => {
+                const timeHeader = document.createElement('div');
+                timeHeader.className = 'time-header';
+                timeHeader.innerText = h;
+                schedule.appendChild(timeHeader);
+            });
             
             // 员工数据
             const employees = [
@@ -252,24 +260,16 @@
                 { id: 'emp5', name: '钱七' }
             ];
             
-            // 创建员工表头
+            // 创建员工行和对应的单元格
             employees.forEach(emp => {
-                const employeeHeader = document.createElement('div');
-                employeeHeader.className = 'header';
-                employeeHeader.innerText = emp.name;
-                schedule.appendChild(employeeHeader);
-            });
-            
-            // 创建时间行和单元格
-            hours.forEach(h => {
-                // 时间单元格
-                const timeDiv = document.createElement('div');
-                timeDiv.className = 'time-slot';
-                timeDiv.innerText = h;
-                schedule.appendChild(timeDiv);
+                // 员工名称（左侧）
+                const employeeDiv = document.createElement('div');
+                employeeDiv.className = 'employee-name';
+                employeeDiv.innerText = emp.name;
+                schedule.appendChild(employeeDiv);
                 
-                // 每个时间对应的员工单元格
-                employees.forEach(() => {
+                // 每个员工对应的时间单元格
+                hours.forEach(() => {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     
