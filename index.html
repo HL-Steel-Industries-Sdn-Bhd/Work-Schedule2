@@ -83,6 +83,7 @@ h3 { margin: 25px 0 15px; color: #34495e; }
     justify-content: center;
 }
 .cell.highlight { background-color: #e8f4fd; border: 1px dashed #3498db; }
+.cell.selected { background-color: #d4edda; border: 2px solid #28a745; }
 .cell.occupied { background-color: #fff8e1; }
 
 .assigned-project {
@@ -153,11 +154,11 @@ h3 { margin: 25px 0 15px; color: #34495e; }
 <div class="instructions">
     <h4>使用说明</h4>
     <ul>
-        <li><strong>桌面端</strong>: 点击并拖拽项目到员工对应的起始时间单元格，然后拖到右边延伸到结束时间</li>
-        <li><strong>移动端</strong>: 长按项目，然后拖动覆盖多个单元格</li>
+        <li><strong>新交互方式</strong>: 先点击选择起始单元格（绿色高亮），然后拖拽项目到该单元格</li>
+        <li>项目会从选定的起始单元格开始，向右延伸到您拖拽的结束位置</li>
         <li>每个格子只能分配一个项目</li>
         <li>点击已分配的项目可以将其从排班表中移除</li>
-        <li><strong>新功能</strong>: 拖拽项目时，相邻的单元格会自动合并成一个连体项目块</li>
+        <li>点击其他单元格可以更改起始位置</li>
     </ul>
 </div>
 </div>
@@ -214,9 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
         {id:'project5',name:'文档编写'}
     ];
 
-    // 当前拖动信息
-    let dragInfo = null;
+    // 当前状态
+    let selectedCell = null; // 当前选中的起始单元格
+    let dragInfo = null; // 拖拽信息
 
+    // 初始化项目
     projects.forEach(project=>{
         const projectDiv=document.createElement('div');
         projectDiv.className='project'; 
@@ -225,9 +228,14 @@ document.addEventListener('DOMContentLoaded', function() {
         projectDiv.setAttribute('draggable','true');
 
         projectDiv.addEventListener('dragstart', function(e){
+            if (!selectedCell) {
+                e.preventDefault();
+                return;
+            }
+            
             dragInfo = { 
                 project: projectDiv, 
-                startCell: null, 
+                startCell: selectedCell, // 使用预先选定的起始单元格
                 cells: [],
                 projectId: project.id,
                 projectName: project.name
@@ -249,16 +257,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const allCells = document.querySelectorAll('.cell');
 
+    // 单元格点击事件 - 选择起始位置
     allCells.forEach(cell=>{
+        cell.addEventListener('click', function(){
+            // 清除之前的选择
+            if(selectedCell) {
+                selectedCell.classList.remove('selected');
+            }
+            
+            // 设置新的选择
+            selectedCell = this;
+            this.classList.add('selected');
+            
+            // 更新说明
+            updateInstructions();
+        });
+        
         cell.addEventListener('dragover', function(e){
             e.preventDefault();
-            if(dragInfo) {
-                if(!dragInfo.startCell) {
-                    // 设置起始单元格为当前鼠标所在的单元格
-                    dragInfo.startCell = cell;
-                }
-                // 高亮显示从起始单元格到当前单元格的范围
-                highlightCells(dragInfo.startCell, cell);
+            if(dragInfo && selectedCell) {
+                // 高亮显示从选定的起始单元格到当前单元格的范围
+                highlightCells(selectedCell, this);
             }
         });
         
@@ -276,10 +295,29 @@ document.addEventListener('DOMContentLoaded', function() {
             if(dragInfo && dragInfo.cells.length > 0) {
                 createMergedProject(dragInfo);
                 dragInfo = null;
+                // 清除选择状态
+                if(selectedCell) {
+                    selectedCell.classList.remove('selected');
+                    selectedCell = null;
+                }
             }
             clearHighlights();
         });
     });
+
+    // 更新使用说明
+    function updateInstructions() {
+        if(selectedCell) {
+            const row = parseInt(selectedCell.dataset.row);
+            const col = parseInt(selectedCell.dataset.col);
+            const employee = employees[row].name;
+            const time = hours[col];
+            document.querySelector('.instructions h4').innerHTML = 
+                `使用说明 - 已选择 ${employee} 的 ${time} 作为起始位置`;
+        } else {
+            document.querySelector('.instructions h4').innerHTML = '使用说明';
+        }
+    }
 
     // 检查是否正在拖拽到任何单元格上
     function isDraggingOverAnyCell() {
@@ -378,6 +416,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function highlightCells(startCell, endCell){
         clearHighlights();
+        if(!dragInfo) return;
+        
         dragInfo.cells = [];
 
         const startCol = parseInt(startCell.dataset.col);
@@ -387,7 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // 确保起始单元格和结束单元格在同一行
         if(parseInt(endCell.dataset.row) !== row) return;
         
-        const minCol = Math.min(startCol, endCol);
+        // 只能向右延伸
+        const minCol = startCol;
         const maxCol = Math.max(startCol, endCol);
 
         for(let c = minCol; c <= maxCol; c++){
