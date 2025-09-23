@@ -130,9 +130,8 @@
             transition: background-color 0.2s;
             padding: 5px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            align-content: flex-start;
+            align-items: center;
+            justify-content: center;
         }
         
         .cell.highlight {
@@ -140,8 +139,12 @@
             border: 1px dashed #3498db;
         }
         
+        .cell.occupied {
+            background-color: #fff8e1;
+        }
+        
         .assigned-project {
-            padding: 6px 10px;
+            padding: 8px 12px;
             background: #e74c3c;
             color: white;
             border-radius: 4px;
@@ -149,6 +152,8 @@
             user-select: none;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             cursor: pointer;
+            text-align: center;
+            width: 100%;
         }
         
         .assigned-project:hover {
@@ -219,7 +224,7 @@
             <ul>
                 <li><strong>桌面端</strong>: 点击并拖拽项目到员工对应的时间单元格</li>
                 <li><strong>移动端</strong>: 长按项目，然后拖动到目标单元格</li>
-                <li>可以为同一员工在同一时间段分配多个项目</li>
+                <li>每个格子只能分配一个项目</li>
                 <li>点击已分配的项目可以将其从排班表中移除</li>
             </ul>
         </div>
@@ -273,10 +278,17 @@
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     
+                    // 检查单元格是否已被占用
+                    function isCellOccupied() {
+                        return cell.querySelector('.assigned-project') !== null;
+                    }
+                    
                     // 桌面端拖放支持
                     cell.addEventListener('dragover', function(e) {
                         e.preventDefault();
-                        this.classList.add('highlight');
+                        if (!isCellOccupied()) {
+                            this.classList.add('highlight');
+                        }
                     });
                     
                     cell.addEventListener('dragleave', function() {
@@ -287,6 +299,11 @@
                         e.preventDefault();
                         this.classList.remove('highlight');
                         
+                        // 如果单元格已被占用，则不执行任何操作
+                        if (isCellOccupied()) {
+                            return;
+                        }
+                        
                         const id = e.dataTransfer.getData('text/plain');
                         const project = document.getElementById(id);
                         
@@ -296,8 +313,11 @@
                             projectClone.addEventListener('click', function(e) {
                                 e.stopPropagation();
                                 this.remove();
+                                cell.classList.remove('occupied');
                             });
+                            
                             this.appendChild(projectClone);
+                            this.classList.add('occupied');
                         }
                     });
                     
@@ -307,6 +327,11 @@
                     }, { passive: false });
                     
                     cell.addEventListener('touchend', function(e) {
+                        // 如果单元格已被占用，则不执行任何操作
+                        if (isCellOccupied()) {
+                            return;
+                        }
+                        
                         const draggingProject = document.querySelector('.project.dragging');
                         if (draggingProject) {
                             const projectClone = draggingProject.cloneNode(true);
@@ -314,8 +339,11 @@
                             projectClone.addEventListener('click', function(e) {
                                 e.stopPropagation();
                                 this.remove();
+                                cell.classList.remove('occupied');
                             });
+                            
                             this.appendChild(projectClone);
+                            this.classList.add('occupied');
                             draggingProject.classList.remove('dragging');
                         }
                     });
