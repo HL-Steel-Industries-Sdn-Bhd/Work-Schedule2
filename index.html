@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>项目排班表</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             padding: 15px;
@@ -17,15 +13,8 @@
             color: #333;
             line-height: 1.5;
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-        h3 {
-            margin: 25px 0 15px;
-            color: #34495e;
-        }
+        h2 { text-align: center; margin-bottom: 20px; color: #2c3e50; }
+        h3 { margin: 25px 0 15px; color: #34495e; }
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -35,15 +24,8 @@
             padding: 20px;
             overflow-x: auto;
         }
-        .schedule-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .projects-sidebar {
-            width: 150px;
-            flex-shrink: 0;
-        }
+        .schedule-container { display: flex; gap: 20px; margin-bottom: 30px; }
+        .projects-sidebar { width: 150px; flex-shrink: 0; }
         .project {
             padding: 12px 15px;
             background: #e74c3c;
@@ -57,15 +39,8 @@
             transition: transform 0.2s, box-shadow 0.2s;
             text-align: center;
         }
-        .project:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .project.dragging {
-            opacity: 0.8;
-            transform: scale(1.05);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-        }
+        .project:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .project.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         .schedule {
             display: grid;
             grid-template-columns: 120px repeat(10, minmax(80px, 1fr));
@@ -115,13 +90,6 @@
             position: relative;
         }
         .assigned-project:hover { background: #c0392b; }
-        .trash-btn {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            font-size: 14px;
-            cursor: pointer;
-        }
         .instructions {
             background: #f8f9fa;
             padding: 15px;
@@ -157,7 +125,7 @@
                 <li><strong>桌面端</strong>: 点击并拖拽项目到员工对应的时间单元格</li>
                 <li><strong>移动端</strong>: 长按项目，然后拖动到目标单元格</li>
                 <li>每个格子只能分配一个项目</li>
-                <li>点击垃圾桶删除已分配项目</li>
+                <li>点击已分配的项目可以将其从排班表中移除</li>
             </ul>
         </div>
     </div>
@@ -169,7 +137,7 @@
 
             // 时间表头
             const hours = [];
-            for(let h = 8; h <= 17; h++) hours.push(`${h<10?'0'+h:h}:30`);
+            for(let h=8; h<=17; h++) hours.push(`${h<10?'0'+h:h}:30`);
             const emptyHeader = document.createElement('div');
             emptyHeader.className = 'header'; emptyHeader.innerText = '员工/时间';
             schedule.appendChild(emptyHeader);
@@ -234,22 +202,8 @@
             function addProjectToCell(cell, project){
                 const projectClone=project.cloneNode(true);
                 projectClone.className='assigned-project';
-
-                // 垃圾桶
-                const trash=document.createElement('span');
-                trash.innerHTML='🗑️';
-                trash.className='trash-btn';
-                trash.title='删除项目';
-                trash.addEventListener('click', function(e){
-                    e.stopPropagation();
-                    projectClone.remove();
-                    cell.classList.remove('occupied');
-                });
-                projectClone.appendChild(trash);
-
-                // 点击项目本体删除（可选）
+                // 点击删除
                 projectClone.addEventListener('click', function(e){ e.stopPropagation(); projectClone.remove(); cell.classList.remove('occupied'); });
-
                 cell.appendChild(projectClone);
                 cell.classList.add('occupied');
             }
