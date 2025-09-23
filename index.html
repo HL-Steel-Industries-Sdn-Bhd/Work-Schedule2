@@ -24,7 +24,12 @@ h3 { margin: 25px 0 15px; color: #34495e; }
     padding: 20px;
     overflow-x: auto;
 }
-.schedule-container { display: flex; gap: 20px; margin-bottom: 30px; }
+.schedule-container { 
+    display: flex; 
+    gap: 20px; 
+    margin-bottom: 30px; 
+    position: relative;
+}
 .projects-sidebar { width: 150px; flex-shrink: 0; }
 .project {
     padding: 12px 15px;
@@ -48,6 +53,7 @@ h3 { margin: 25px 0 15px; color: #34495e; }
     grid-auto-rows: minmax(50px, auto);
     gap: 2px;
     width: 100%;
+    position: relative;
 }
 
 .header, .time-header, .employee-name {
@@ -101,9 +107,9 @@ h3 { margin: 25px 0 15px; color: #34495e; }
 
 /* 连体项目样式 */
 .assigned-project.merged {
-    border-radius: 0;
     position: absolute;
     z-index: 2;
+    box-sizing: border-box;
 }
 .assigned-project.merged-start {
     border-top-left-radius: 4px;
@@ -310,23 +316,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstCell = dragInfo.cells[0];
         const lastCell = dragInfo.cells[dragInfo.cells.length-1];
         
-        // 计算合并项目的宽度和位置
+        // 获取单元格的尺寸和位置信息
         const firstCellRect = firstCell.getBoundingClientRect();
         const lastCellRect = lastCell.getBoundingClientRect();
         const scheduleRect = schedule.getBoundingClientRect();
         
+        // 计算相对于排班表的正确位置
         const left = firstCellRect.left - scheduleRect.left;
         const width = lastCellRect.right - firstCellRect.left;
+        const top = firstCellRect.top - scheduleRect.top;
+        const height = firstCellRect.height;
         
         mergedProject.style.left = `${left}px`;
         mergedProject.style.width = `${width}px`;
-        mergedProject.style.top = `${firstCellRect.top - scheduleRect.top}px`;
-        mergedProject.style.height = `${firstCellRect.height}px`;
+        mergedProject.style.top = `${top}px`;
+        mergedProject.style.height = `${height}px`;
         
         // 添加圆角
         if(dragInfo.cells.length > 1) {
             mergedProject.classList.add('merged-start');
             mergedProject.classList.add('merged-end');
+        } else {
+            mergedProject.style.borderRadius = '4px';
         }
         
         // 添加点击移除事件
@@ -335,8 +346,8 @@ document.addEventListener('DOMContentLoaded', function() {
             removeMergedProject(this);
         });
         
-        // 添加到第一个单元格
-        firstCell.appendChild(mergedProject);
+        // 添加到排班表容器而不是单元格
+        schedule.appendChild(mergedProject);
         
         // 标记所有单元格为已占用
         dragInfo.cells.forEach(cell => {
@@ -354,11 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const cell = document.querySelector(`.cell[data-row='${row}'][data-col='${col}']`);
             if(cell) {
                 cell.classList.remove('occupied');
-                // 移除可能存在的单个项目
-                const singleProject = cell.querySelector('.assigned-project:not(.merged)');
-                if(singleProject) {
-                    singleProject.remove();
-                }
             }
         }
         
