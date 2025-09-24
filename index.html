@@ -80,7 +80,7 @@
       padding: 10px 14px; 
       color: black; 
       border-radius: 4px; 
-      font-size: 24px;  /* 放进表格后字更大 24px */
+      font-size: 18px;  /* 基础18px，会根据格数动态调整 */
       user-select: none; 
       box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
       cursor: pointer; 
@@ -93,6 +93,7 @@
       position: relative; 
       z-index: 1; 
       border: 2px solid #ccc; 
+      transition: font-size 0.2s ease; 
     }
     .assigned-project:hover { opacity: 0.9; }
     .assigned-project.merged { position: absolute; z-index: 2; box-sizing: border-box; }
@@ -111,7 +112,6 @@
   </style>
 </head>
 <body>
-  <!-- 下面保持你的原始结构和JS逻辑 -->
   <div class="container">
     <div class="date" id="todayDate">日期：</div>
     <h2>项目排班表</h2>
@@ -135,7 +135,6 @@
   </div>
 
   <script>
-    /* 你的原始脚本逻辑保持不变 */
     document.addEventListener('DOMContentLoaded', function() {
       const schedule = document.getElementById('schedule');
       const projectsContainer = document.getElementById('projects');
@@ -194,12 +193,10 @@
         { id: 'project5', name: 'Hero-SO-007476-Item32-3units' }
       ];
 
-      // 马卡龙色
       const pastelColors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#E0BBE4', '#C2F0FC'];
       let soColorMap = {};
       let colorIndex = 0;
 
-      // 分配颜色：同 SO No. 同颜色
       projects.forEach(p => {
         const soMatch = p.name.match(/SO-\d+/);
         if (soMatch) {
@@ -211,11 +208,9 @@
         }
       });
 
-      // 当前状态
       let selectedCell = null;
       let dragInfo = null;
 
-      // 初始化项目
       projects.forEach(project => {
         const projectDiv = document.createElement('div');
         projectDiv.className = 'project';
@@ -320,6 +315,11 @@
         mergedProject.dataset.startCol = startCol;
         mergedProject.dataset.endCol = endCol;
 
+        // 动态调整字体大小
+        const spanCount = endCol - startCol + 1;
+        const fontSize = 16 + spanCount * 2; // 每多一格 +2px
+        mergedProject.style.fontSize = fontSize + 'px';
+
         const soMatch = dragInfo.projectName.match(/SO-\d+/);
         if (soMatch && soColorMap[soMatch[0]]) {
           mergedProject.style.background = soColorMap[soMatch[0]];
@@ -391,6 +391,7 @@
   </script>
 </body>
 </html>
+
 
 
 
