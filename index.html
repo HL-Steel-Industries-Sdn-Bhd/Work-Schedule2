@@ -42,7 +42,7 @@
       border-radius: 6px; 
       cursor: pointer; 
       margin-bottom: 12px; 
-      font-size: 20px;  /* 项目字体更大 */
+      font-size: 20px;  /* 左边项目保持20px */
       user-select: none; 
       box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
       transition: transform 0.2s, box-shadow 0.2s; 
@@ -52,7 +52,8 @@
     .project:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
     .project.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
 
-    .schedule { display: grid; grid-template-columns: 20% repeat(10, 8%); grid-auto-rows: minmax(60px, auto); gap: 2px; width: 100%; position: relative; }
+    /* 缩小员工/时间那一列宽度 */
+    .schedule { display: grid; grid-template-columns: 10% repeat(10, 9%); grid-auto-rows: minmax(60px, auto); gap: 2px; width: 100%; position: relative; }
     .header, .time-header { color: white; text-align: center; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 4px; padding: 12px; font-size: 20px; }
     .header { background: #3498db; }
     .time-header { background: #2c3e50; }
@@ -79,7 +80,7 @@
       padding: 10px 14px; 
       color: black; 
       border-radius: 4px; 
-      font-size: 20px;  /* 已分配项目更大 */
+      font-size: 24px;  /* 放进表格后字更大 24px */
       user-select: none; 
       box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
       cursor: pointer; 
@@ -104,12 +105,13 @@
     @media (max-width: 768px) {
       .schedule-container { flex-direction: column; }
       .projects-sidebar { width: 100%; }
-      .schedule { grid-template-columns: 25% repeat(10, 7.5%); }
+      .schedule { grid-template-columns: 15% repeat(10, 8.5%); }
       .project, .assigned-project, .employee-name { font-size: 18px; }
     }
   </style>
 </head>
 <body>
+  <!-- 下面保持你的原始结构和JS逻辑 -->
   <div class="container">
     <div class="date" id="todayDate">日期：</div>
     <h2>项目排班表</h2>
@@ -133,6 +135,7 @@
   </div>
 
   <script>
+    /* 你的原始脚本逻辑保持不变 */
     document.addEventListener('DOMContentLoaded', function() {
       const schedule = document.getElementById('schedule');
       const projectsContainer = document.getElementById('projects');
@@ -388,6 +391,7 @@
   </script>
 </body>
 </html>
+
 
 
 
