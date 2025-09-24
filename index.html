@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>项目排班表</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,7 +53,7 @@
 
     .schedule { 
       display: grid; 
-      grid-template-columns: 10% repeat(17, 5.3%); /* ✅ 这里改成17列，宽度自适应 */
+      grid-template-columns: 10% repeat(17, 5.3%); /* 17 列时间段 */
       grid-auto-rows: minmax(60px, auto); 
       gap: 2px; 
       width: 100%; 
@@ -124,6 +124,10 @@
       z-index: 1; 
       border: 2px solid #ccc; 
       transition: font-size 0.2s ease; 
+      white-space: nowrap;        /* 默认单行，超出省略 */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
     }
     .assigned-project.merged { position: absolute; z-index: 2; box-sizing: border-box; }
 
@@ -173,13 +177,13 @@
       const today = new Date();
       todayDate.innerText = '日期：' + today.toLocaleDateString('zh-CN');
 
-      // 时间表头 ✅ 已加 10:00 和 11:00
+      // 时间表头
       const hours = [
         '8:30','9:30','10:30','11:30','12:00','1:00','2:00','3:00',
         '4:00','5:00','5:30','6:00','7:00','8:00','9:00','10:00','11:00'
       ];
 
-      const breakCols = [4, 10]; // 12:00 和 5:30
+      const breakCols = [4, 10]; // 12:00 和 5:30 为休息
 
       const emptyHeader = document.createElement('div');
       emptyHeader.className = 'header';
@@ -342,6 +346,13 @@
       function createMergedProject(dragInfo) {
         if (dragInfo.cells.length === 0) return;
 
+        // 先排序并取得 start/end
+        dragInfo.cells.sort((a, b) => parseInt(a.dataset.col) - parseInt(b.dataset.col));
+        const row = dragInfo.cells[0].dataset.row;
+        const startCol = parseInt(dragInfo.cells[0].dataset.col);
+        const endCol = parseInt(dragInfo.cells[dragInfo.cells.length - 1].dataset.col);
+
+        // 清除 cell 内已有的 assigned-project（有时项目是直接放进 cell 的）
         dragInfo.cells.forEach(cell => {
           const existingProject = cell.querySelector('.assigned-project');
           if (existingProject) {
@@ -350,11 +361,20 @@
           }
         });
 
-        dragInfo.cells.sort((a, b) => parseInt(a.dataset.col) - parseInt(b.dataset.col));
-        const row = dragInfo.cells[0].dataset.row;
-        const startCol = parseInt(dragInfo.cells[0].dataset.col);
-        const endCol = parseInt(dragInfo.cells[dragInfo.cells.length - 1].dataset.col);
+        // 删除任何在同一行且与本次范围重叠的已存在 merged 元素（避免重复覆盖）
+        document.querySelectorAll('.assigned-project.merged').forEach(el => {
+          const erow = el.dataset.row;
+          const est = parseInt(el.dataset.startCol);
+          const eet = parseInt(el.dataset.endCol);
+          if (String(erow) === String(row)) {
+            // 有重叠则移除
+            if (!(eet < startCol || est > endCol)) {
+              el.remove();
+            }
+          }
+        });
 
+        // 构建 merged element
         const mergedProject = document.createElement('div');
         mergedProject.className = 'assigned-project merged';
         mergedProject.innerText = dragInfo.projectName;
@@ -363,15 +383,45 @@
         mergedProject.dataset.startCol = startCol;
         mergedProject.dataset.endCol = endCol;
 
+        // 字体逻辑：spanCount 决定行为
         const spanCount = endCol - startCol + 1;
-        const fontSize = 16 + spanCount * 2;
-        mergedProject.style.fontSize = fontSize + 'px';
+        let fontSize = Math.max(12, 16 + spanCount * 2);
 
+        if (spanCount === 1) {
+          // 单格：允许换行并使用稍小的基础字体，随后尝试进一步缩小以适配
+          fontSize = 14;
+          mergedProject.style.whiteSpace = 'normal';
+          mergedProject.style.wordBreak = 'break-word';
+          mergedProject.style.textAlign = 'center';
+          // 使文字垂直水平居中并允许多行
+          mergedProject.style.display = 'flex';
+          mergedProject.style.flexDirection = 'column';
+          mergedProject.style.alignItems = 'center';
+          mergedProject.style.justifyContent = 'center';
+        } else {
+          // 多格：单行显示，超出的用省略
+          mergedProject.style.whiteSpace = 'nowrap';
+          mergedProject.style.overflow = 'hidden';
+          mergedProject.style.textOverflow = 'ellipsis';
+          mergedProject.style.display = 'flex';
+          mergedProject.style.flexDirection = 'row';
+          mergedProject.style.alignItems = 'center';
+          mergedProject.style.justifyContent = 'center';
+        }
+
+        mergedProject.style.fontSize = fontSize + 'px';
+        mergedProject.style.boxSizing = 'border-box';
+        mergedProject.style.padding = '8px';
+
+        // 上色
         const soMatch = dragInfo.projectName.match(/SO-\d+/);
         if (soMatch && soColorMap[soMatch[0]]) {
           mergedProject.style.background = soColorMap[soMatch[0]];
+        } else {
+          mergedProject.style.background = '#fff';
         }
 
+        // 定位：取第一个和最后一个 cell 的 rect 计算 left/width/top/height
         const firstCell = dragInfo.cells[0];
         const lastCell = dragInfo.cells[dragInfo.cells.length - 1];
         const firstCellRect = firstCell.getBoundingClientRect();
@@ -388,19 +438,40 @@
         mergedProject.style.top = top + 'px';
         mergedProject.style.height = height + 'px';
 
+        // 点击删除（用闭包引用 element）
         mergedProject.addEventListener('click', function(e) {
           e.stopPropagation();
-          removeMergedProject(this);
+          removeMergedProject(mergedProject);
         });
 
         schedule.appendChild(mergedProject);
 
+        // 标记格子已占用
         dragInfo.cells.forEach(cell => {
           cell.classList.add('occupied');
         });
+
+        // 如果是单格：尝试逐步缩小字体直到文字在格子内可读（避免溢出过多）
+        if (spanCount === 1) {
+          // 给浏览器一次重绘机会
+          requestAnimationFrame(() => {
+            let fs = parseInt(window.getComputedStyle(mergedProject).fontSize, 10) || 14;
+            const minFS = 10;
+            // 尝试减小字体，直到内容高度不超出或到最小字体
+            while (fs > minFS) {
+              // scrollHeight vs clientHeight 用于判断换行后的高度是否溢出格子
+              if (mergedProject.scrollHeight <= mergedProject.clientHeight && mergedProject.scrollWidth <= mergedProject.clientWidth) {
+                break;
+              }
+              fs -= 1;
+              mergedProject.style.fontSize = fs + 'px';
+            }
+          });
+        }
       }
 
       function removeMergedProject(projectElement) {
+        if (!projectElement) return;
         const row = projectElement.dataset.row;
         const startCol = parseInt(projectElement.dataset.startCol);
         const endCol = parseInt(projectElement.dataset.endCol);
@@ -439,6 +510,7 @@
   </script>
 </body>
 </html>
+
 
 
 
