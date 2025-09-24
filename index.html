@@ -53,7 +53,7 @@
 
     .schedule { 
       display: grid; 
-      grid-template-columns: 10% repeat(15, 6%); 
+      grid-template-columns: 10% repeat(17, 5.3%); /* ✅ 这里改成17列，宽度自适应 */
       grid-auto-rows: minmax(60px, auto); 
       gap: 2px; 
       width: 100%; 
@@ -135,7 +135,7 @@
     @media (max-width: 768px) {
       .schedule-container { flex-direction: column; }
       .projects-sidebar { width: 100%; }
-      .schedule { grid-template-columns: 15% repeat(15, 5.5%); }
+      .schedule { grid-template-columns: 15% repeat(17, 5%); } /* ✅ 同步改 */
       .project, .assigned-project, .employee-name { font-size: 18px; }
     }
   </style>
@@ -173,10 +173,10 @@
       const today = new Date();
       todayDate.innerText = '日期：' + today.toLocaleDateString('zh-CN');
 
-      // 时间表头
+      // 时间表头 ✅ 已加 10:00 和 11:00
       const hours = [
         '8:30','9:30','10:30','11:30','12:00','1:00','2:00','3:00',
-        '4:00','5:00','5:30','6:00','7:00','8:00','9:00'
+        '4:00','5:00','5:30','6:00','7:00','8:00','9:00','10:00','11:00'
       ];
 
       const breakCols = [4, 10]; // 12:00 和 5:30
@@ -432,6 +432,7 @@
   </script>
 </body>
 </html>
+
 
 
 
