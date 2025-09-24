@@ -106,8 +106,9 @@
       font-weight: bold; 
     }
 
+    /* 调整：把 border 1px，padding 缩小，box-sizing 保证内含 border/padding */
     .assigned-project { 
-      padding: 10px 14px; 
+      padding: 6px 8px; 
       color: black; 
       border-radius: 4px; 
       font-size: 18px; 
@@ -122,14 +123,15 @@
       justify-content: center; 
       position: relative; 
       z-index: 1; 
-      border: 2px solid #ccc; 
+      border: 1px solid #ccc; /* 从 2px -> 1px */
       transition: font-size 0.2s ease; 
       white-space: nowrap;        /* 默认单行，超出省略 */
       overflow: hidden;
       text-overflow: ellipsis;
       box-sizing: border-box;
+      pointer-events: auto;
     }
-    .assigned-project.merged { position: absolute; z-index: 2; box-sizing: border-box; }
+    .assigned-project.merged { position: absolute; z-index: 3; box-sizing: border-box; }
 
     .instructions { background: #f8f9fa; padding: 18px; border-radius: 6px; margin-top: 20px; font-size: 18px; border-left: 4px solid #3498db; }
     .instructions h4 { margin-bottom: 8px; color: #2c3e50; font-size: 20px; }
@@ -411,7 +413,7 @@
 
         mergedProject.style.fontSize = fontSize + 'px';
         mergedProject.style.boxSizing = 'border-box';
-        mergedProject.style.padding = '8px';
+        mergedProject.style.padding = '6px 8px';
 
         // 上色
         const soMatch = dragInfo.projectName.match(/SO-\d+/);
@@ -428,13 +430,18 @@
         const lastCellRect = lastCell.getBoundingClientRect();
         const scheduleRect = schedule.getBoundingClientRect();
 
-        const left = firstCellRect.left - scheduleRect.left;
-        const width = lastCellRect.right - firstCellRect.left;
+        const rawLeft = firstCellRect.left - scheduleRect.left;
+        const rawWidth = lastCellRect.right - firstCellRect.left;
         const top = firstCellRect.top - scheduleRect.top;
         const height = firstCellRect.height;
 
-        mergedProject.style.left = left + 'px';
-        mergedProject.style.width = width + 'px';
+        // 调整：给左右各留一点 buffer，避免文字被边框/子像素裁切
+        const EXTRA_BUFFER = 4; // 总共额外宽度（像素），你可以改成 2 或 6 调整视觉
+        const leftAdj = Math.max(0, rawLeft - Math.ceil(EXTRA_BUFFER / 2));
+        const widthAdj = Math.max(20, rawWidth + EXTRA_BUFFER);
+
+        mergedProject.style.left = leftAdj + 'px';
+        mergedProject.style.width = widthAdj + 'px';
         mergedProject.style.top = top + 'px';
         mergedProject.style.height = height + 'px';
 
@@ -459,7 +466,6 @@
             const minFS = 10;
             // 尝试减小字体，直到内容高度不超出或到最小字体
             while (fs > minFS) {
-              // scrollHeight vs clientHeight 用于判断换行后的高度是否溢出格子
               if (mergedProject.scrollHeight <= mergedProject.clientHeight && mergedProject.scrollWidth <= mergedProject.clientWidth) {
                 break;
               }
@@ -510,6 +516,7 @@
   </script>
 </body>
 </html>
+
 
 
 
