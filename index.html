@@ -1,261 +1,322 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>项目排班表</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    padding: 15px;
-    background-color: #f5f7fa;
-    color: #333;
-    line-height: 1.5;
-}
-h2 { text-align: center; margin-bottom: 20px; color: #2c3e50; }
-h3 { margin: 25px 0 15px; color: #34495e; }
-.container {
-    max-width: 100%;
-    margin: 0 auto;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    padding: 20px;
-    overflow-x: auto;
-}
-
-/* 新增日期+标题栏样式 */
-.top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-.date-box {
-    padding: 8px 12px;
-    background: #2ecc71;
-    color: white;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 16px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.schedule-container { 
-    display: flex; 
-    gap: 20px; 
-    margin-bottom: 30px; 
-    position: relative;
-}
-.projects-sidebar { width: 150px; flex-shrink: 0; }
-.project {
-    padding: 12px 15px;
-    background: #e74c3c;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-bottom: 10px;
-    font-size: 16px;
-    user-select: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-    text-align: center;
-}
-.project:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-.project.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
-
-.schedule { 
-    display: grid; 
-    grid-template-columns: 100px repeat(10, 1fr); 
-    border: 1px solid #ddd; 
-    border-radius: 8px; 
-    overflow: hidden; 
-    width: 100%;
-}
-.cell {
-    border: 1px solid #eee;
-    min-height: 50px;
-    position: relative;
-    transition: background 0.2s;
-}
-.cell:hover { background: #f9f9f9; }
-.cell.active { background: #e1f5fe !important; }
-
-.header {
-    background: #3498db;
-    color: white;
-    text-align: center;
-    font-weight: bold;
-    padding: 10px 0;
-}
-.person { background: #ecf0f1; text-align: center; font-weight: bold; }
-.assigned-project {
-    position: absolute;
-    top: 5px; bottom: 5px; left: 5px; right: 5px;
-    background: #2ecc71;
-    color: white;
-    border-radius: 5px;
-    display: flex;
-    align-items: center; 
-    justify-content: center;
-    cursor: pointer;
-    font-size: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    overflow: hidden;
-    white-space: nowrap;
-}
-.assigned-project span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0 5px;
-}
-
-.instructions {
-    background: #f9f9f9;
-    border-left: 4px solid #3498db;
-    padding: 15px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #555;
-    margin-top: 20px;
-}
-.instructions h4 { margin-bottom: 10px; color: #2c3e50; }
-.instructions ul { margin-left: 20px; }
-
-@media (max-width: 768px) {
-    .schedule-container { flex-direction: column; }
-    .projects-sidebar { width: 100%; }
-    .schedule { grid-template-columns: 25% repeat(10, 7.5%); }
-    .project, .assigned-project { font-size: 14px; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目排班表</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; background-color: #f5f7fa; color: #333; line-height: 1.5; }
+    h2 { text-align: center; margin-bottom: 20px; color: #2c3e50; }
+    h3 { margin: 25px 0 15px; color: #34495e; }
+    .container { max-width: 100%; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; overflow-x: auto; }
+    .schedule-container { display: flex; gap: 20px; margin-bottom: 30px; position: relative; }
+    .projects-sidebar { width: 150px; flex-shrink: 0; }
+    .project { padding: 12px 15px; background: #e74c3c; color: white; border-radius: 6px; cursor: pointer; margin-bottom: 10px; font-size: 16px; user-select: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; text-align: center; }
+    .project:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .project.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+    .schedule { display: grid; grid-template-columns: 20% repeat(10, 8%); grid-auto-rows: minmax(50px, auto); gap: 2px; width: 100%; position: relative; }
+    .header, .time-header, .employee-name { color: white; text-align: center; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 4px; padding: 10px; }
+    .header { background: #3498db; }
+    .time-header { background: #2c3e50; }
+    .employee-name { background: #1abc9c; }
+    .cell { background: #f9f9f9; border: 1px solid #e0e0e0; min-height: 50px; position: relative; border-radius: 4px; transition: background-color 0.2s; padding: 5px; display: flex; align-items: center; justify-content: center; }
+    .cell.highlight { background-color: #e8f4fd; border: 1px dashed #3498db; }
+    .cell.selected { background-color: #d4edda; border: 2px solid #28a745; }
+    .cell.occupied { background-color: #fff8e1; }
+    .assigned-project { padding: 8px 12px; background: #e74c3c; color: white; border-radius: 4px; font-size: 14px; user-select: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; text-align: center; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+    .assigned-project:hover { background: #c0392b; }
+    .assigned-project.merged { position: absolute; z-index: 2; box-sizing: border-box; }
+    .assigned-project.merged-start { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+    .assigned-project.merged-end { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+    .instructions { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; font-size: 14px; border-left: 4px solid #3498db; }
+    .instructions h4 { margin-bottom: 8px; color: #2c3e50; }
+    .instructions ul { padding-left: 20px; }
+    .instructions li { margin-bottom: 5px; }
+    @media (max-width: 768px) {
+      .schedule-container { flex-direction: column; }
+      .projects-sidebar { width: 100%; }
+      .schedule { grid-template-columns: 25% repeat(10, 7.5%); }
+      .project, .assigned-project { font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <div class="top-bar">
-        <div class="date-box">2025-09-24</div>
-        <h2>项目排班表</h2>
-    </div>
-
+  <div class="container">
+    <h2>项目排班表</h2>
     <div class="schedule-container">
-        <div class="projects-sidebar">
-            <h3>可分配项目</h3>
-            <div id="projects"></div>
-        </div>
-        <div class="schedule" id="schedule"></div>
+      <div class="projects-sidebar">
+        <h3>可分配项目</h3>
+        <div id="projects"></div>
+      </div>
+      <div class="schedule" id="schedule"></div>
     </div>
     <div class="instructions">
-        <h4>使用说明</h4>
-        <ul>
-            <li><strong>新交互方式</strong>: 先点击选择起始单元格（绿色高亮），然后拖拽项目到该单元格</li>
-            <li>项目会从选定的起始单元格开始，向右延伸到您拖拽的结束位置</li>
-            <li>每个格子只能分配一个项目</li>
-            <li>点击已分配的项目可以将其从排班表中移除</li>
-            <li>点击其他单元格可以更改起始位置</li>
-        </ul>
+      <h4>使用说明</h4>
+      <ul>
+        <li><strong>新交互方式</strong>: 先点击选择起始单元格（绿色高亮），然后拖拽项目到该单元格</li>
+        <li>项目会从选定的起始单元格开始，向右延伸到您拖拽的结束位置</li>
+        <li>每个格子只能分配一个项目</li>
+        <li>点击已分配的项目可以将其从排班表中移除</li>
+        <li>点击其他单元格可以更改起始位置</li>
+      </ul>
     </div>
-</div>
+  </div>
 
-<script>
-const persons = ["员工A", "员工B", "员工C", "员工D"];
-const times = ["8:00", "9:00", "10:00", "11:00", "12:00", 
-               "13:00", "14:00", "15:00", "16:00", "17:00"];
-const projectsList = ["项目1", "项目2", "项目3", "项目4", "项目5"];
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const schedule = document.getElementById('schedule');
+      const projectsContainer = document.getElementById('projects');
 
-const projectsContainer = document.getElementById("projects");
-projectsList.forEach(proj => {
-    const div = document.createElement("div");
-    div.className = "project";
-    div.textContent = proj;
-    div.draggable = true;
-    div.addEventListener("dragstart", (e) => {
-        div.classList.add("dragging");
-        e.dataTransfer.setData("text/plain", proj);
-    });
-    div.addEventListener("dragend", () => {
-        div.classList.remove("dragging");
-    });
-    projectsContainer.appendChild(div);
-});
+      // 时间表头
+      const hours = [];
+      for (let h = 8; h <= 17; h++) hours.push((h < 10 ? '0' + h : h) + ':30');
 
-const schedule = document.getElementById("schedule");
-schedule.innerHTML = '<div class="header">人员/时间</div>';
-times.forEach(t => {
-    schedule.innerHTML += '<div class="header">' + t + '</div>';
-});
-persons.forEach(person => {
-    schedule.innerHTML += '<div class="person">' + person + '</div>';
-    times.forEach(t => {
-        schedule.innerHTML += '<div class="cell" data-person="' + person + '" data-time="' + t + '"></div>';
-    });
-});
+      const emptyHeader = document.createElement('div');
+      emptyHeader.className = 'header';
+      emptyHeader.innerText = '员工/时间';
+      schedule.appendChild(emptyHeader);
 
-let activeCell = null;
-const cells = document.querySelectorAll(".cell");
+      hours.forEach(h => {
+        const th = document.createElement('div');
+        th.className = 'time-header';
+        th.innerText = h;
+        schedule.appendChild(th);
+      });
 
-cells.forEach(cell => {
-    cell.addEventListener("click", () => {
-        if (activeCell) activeCell.classList.remove("active");
-        activeCell = cell;
-        activeCell.classList.add("active");
-    });
-    cell.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        if (activeCell) cell.style.background = "#d0f0c0";
-    });
-    cell.addEventListener("dragleave", () => {
-        cell.style.background = "";
-    });
-    cell.addEventListener("drop", (e) => {
-        e.preventDefault();
-        cell.style.background = "";
-        const projectName = e.dataTransfer.getData("text/plain");
-        if (!activeCell) { alert("请先选择起始单元格"); return; }
+      // 员工数据
+      const employees = [
+        { id: 'emp1', name: '张三' },
+        { id: 'emp2', name: '李四' },
+        { id: 'emp3', name: '王五' },
+        { id: 'emp4', name: '赵六' },
+        { id: 'emp5', name: '钱七' }
+      ];
 
-        const person = activeCell.dataset.person;
-        const startTime = times.indexOf(activeCell.dataset.time);
-        const endTime = times.indexOf(cell.dataset.time);
+      // 创建单元格并添加 data-row/data-col
+      employees.forEach((emp, rowIndex) => {
+        const empDiv = document.createElement('div');
+        empDiv.className = 'employee-name';
+        empDiv.innerText = emp.name;
+        schedule.appendChild(empDiv);
 
-        if (person !== cell.dataset.person || endTime < startTime) {
-            alert("请在同一行从左到右拖拽");
+        hours.forEach((hour, colIndex) => {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = rowIndex;
+          cell.dataset.col = colIndex;
+          schedule.appendChild(cell);
+        });
+      });
+
+      // 项目数据
+      const projects = [
+        { id: 'project1', name: '前端开发' },
+        { id: 'project2', name: '后端开发' },
+        { id: 'project3', name: 'UI设计' },
+        { id: 'project4', name: '测试' },
+        { id: 'project5', name: '文档编写' }
+      ];
+
+      // 当前状态
+      let selectedCell = null; // 当前选中的起始单元格
+      let dragInfo = null;     // 拖拽信息
+
+      // 初始化项目
+      projects.forEach(project => {
+        const projectDiv = document.createElement('div');
+        projectDiv.className = 'project';
+        projectDiv.id = project.id;
+        projectDiv.innerText = project.name;
+        projectDiv.setAttribute('draggable', 'true');
+
+        projectDiv.addEventListener('dragstart', function(e) {
+          if (!selectedCell) {
+            e.preventDefault();
             return;
-        }
+          }
+          dragInfo = {
+            project: projectDiv,
+            startCell: selectedCell,
+            cells: [],
+            projectId: project.id,
+            projectName: project.name
+          };
+          e.dataTransfer.setData('text/plain', e.target.id);
+          e.target.classList.add('dragging');
+        });
 
-        for (let i = startTime; i <= endTime; i++) {
-            const targetCell = document.querySelector(
-                '.cell[data-person="' + person + '"][data-time="' + times[i] + '"]'
-            );
-            if (targetCell.querySelector(".assigned-project")) {
-                alert("部分时间段已有项目");
-                return;
+        projectDiv.addEventListener('dragend', function() {
+          if (dragInfo && dragInfo.cells.length > 0) {
+            createMergedProject(dragInfo);
+            dragInfo = null;
+          }
+          this.classList.remove('dragging');
+        });
+
+        projectsContainer.appendChild(projectDiv);
+      });
+
+      const allCells = document.querySelectorAll('.cell');
+
+      // 单元格点击事件 - 选择起始位置
+      allCells.forEach(cell => {
+        cell.addEventListener('click', function() {
+          if (selectedCell) {
+            selectedCell.classList.remove('selected');
+          }
+          selectedCell = this;
+          this.classList.add('selected');
+          updateInstructions();
+        });
+
+        cell.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          if (dragInfo && selectedCell) {
+            highlightCells(selectedCell, this);
+          }
+        });
+
+        cell.addEventListener('dragleave', function() {
+          setTimeout(() => {
+            if (!isDraggingOverAnyCell()) {
+              clearHighlights();
             }
+          }, 50);
+        });
+
+        cell.addEventListener('drop', function(e) {
+          e.preventDefault();
+          if (dragInfo && dragInfo.cells.length > 0) {
+            createMergedProject(dragInfo);
+            dragInfo = null;
+            if (selectedCell) {
+              selectedCell.classList.remove('selected');
+              selectedCell = null;
+            }
+          }
+          clearHighlights();
+        });
+      });
+
+      // 更新使用说明
+      function updateInstructions() {
+        if (selectedCell) {
+          const row = parseInt(selectedCell.dataset.row);
+          const col = parseInt(selectedCell.dataset.col);
+          const employee = employees[row].name;
+          const time = hours[col];
+          document.querySelector('.instructions h4').innerHTML =
+            '使用说明 - 已选择 ' + employee + ' 的 ' + time + ' 作为起始位置';
+        } else {
+          document.querySelector('.instructions h4').innerHTML = '使用说明';
+        }
+      }
+
+      function isDraggingOverAnyCell() {
+        return Array.from(allCells).some(cell => cell.matches(':hover') || cell.querySelector(':hover'));
+      }
+
+      function createMergedProject(dragInfo) {
+        if (dragInfo.cells.length === 0) return;
+
+        dragInfo.cells.forEach(cell => {
+          const existingProject = cell.querySelector('.assigned-project');
+          if (existingProject) {
+            existingProject.remove();
+            cell.classList.remove('occupied');
+          }
+        });
+
+        dragInfo.cells.sort((a, b) => parseInt(a.dataset.col) - parseInt(b.dataset.col));
+        const row = dragInfo.cells[0].dataset.row;
+        const startCol = parseInt(dragInfo.cells[0].dataset.col);
+        const endCol = parseInt(dragInfo.cells[dragInfo.cells.length - 1].dataset.col);
+
+        const mergedProject = document.createElement('div');
+        mergedProject.className = 'assigned-project merged';
+        mergedProject.innerText = dragInfo.projectName;
+        mergedProject.dataset.projectId = dragInfo.projectId;
+        mergedProject.dataset.row = row;
+        mergedProject.dataset.startCol = startCol;
+        mergedProject.dataset.endCol = endCol;
+
+        const firstCell = dragInfo.cells[0];
+        const lastCell = dragInfo.cells[dragInfo.cells.length - 1];
+        const firstCellRect = firstCell.getBoundingClientRect();
+        const lastCellRect = lastCell.getBoundingClientRect();
+        const scheduleRect = schedule.getBoundingClientRect();
+
+        const left = firstCellRect.left - scheduleRect.left;
+        const width = lastCellRect.right - firstCellRect.left;
+        const top = firstCellRect.top - scheduleRect.top;
+        const height = firstCellRect.height;
+
+        mergedProject.style.left = left + 'px';
+        mergedProject.style.width = width + 'px';
+        mergedProject.style.top = top + 'px';
+        mergedProject.style.height = height + 'px';
+
+        if (dragInfo.cells.length > 1) {
+          mergedProject.classList.add('merged-start');
+          mergedProject.classList.add('merged-end');
+        } else {
+          mergedProject.style.borderRadius = '4px';
         }
 
-        for (let i = startTime; i <= endTime; i++) {
-            const targetCell = document.querySelector(
-                '.cell[data-person="' + person + '"][data-time="' + times[i] + '"]'
-            );
-            const projDiv = document.createElement("div");
-            projDiv.className = "assigned-project";
-            if (i === startTime) projDiv.innerHTML = "<span>" + projectName + "</span>";
-            targetCell.appendChild(projDiv);
-            projDiv.addEventListener("click", () => {
-                for (let j = startTime; j <= endTime; j++) {
-                    const c = document.querySelector(
-                        '.cell[data-person="' + person + '"][data-time="' + times[j] + '"]'
-                    );
-                    if (c.firstChild) c.removeChild(c.firstChild);
-                }
-            });
+        mergedProject.addEventListener('click', function(e) {
+          e.stopPropagation();
+          removeMergedProject(this);
+        });
+
+        schedule.appendChild(mergedProject);
+
+        dragInfo.cells.forEach(cell => {
+          cell.classList.add('occupied');
+        });
+      }
+
+      function removeMergedProject(projectElement) {
+        const row = projectElement.dataset.row;
+        const startCol = parseInt(projectElement.dataset.startCol);
+        const endCol = parseInt(projectElement.dataset.endCol);
+        for (let col = startCol; col <= endCol; col++) {
+          const cell = document.querySelector(".cell[data-row='" + row + "'][data-col='" + col + "']");
+          if (cell) {
+            cell.classList.remove('occupied');
+          }
         }
-        activeCell.classList.remove("active");
-        activeCell = null;
+        projectElement.remove();
+      }
+
+      function highlightCells(startCell, endCell) {
+        clearHighlights();
+        if (!dragInfo) return;
+        dragInfo.cells = [];
+        const startCol = parseInt(startCell.dataset.col);
+        const endCol = parseInt(endCell.dataset.col);
+        const row = parseInt(startCell.dataset.row);
+        if (parseInt(endCell.dataset.row) !== row) return;
+
+        const minCol = startCol;
+        const maxCol = Math.max(startCol, endCol);
+        for (let c = minCol; c <= maxCol; c++) {
+          const sel = document.querySelector(".cell[data-row='" + row + "'][data-col='" + c + "']");
+          if (sel) {
+            sel.classList.add('highlight');
+            dragInfo.cells.push(sel);
+          }
+        }
+      }
+
+      function clearHighlights() {
+        document.querySelectorAll('.cell.highlight').forEach(c => c.classList.remove('highlight'));
+      }
     });
-});
-</script>
+  </script>
 </body>
 </html>
+
 
 
 
